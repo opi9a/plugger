@@ -62,7 +62,12 @@ def main(panel_ip, socket_ip, threshold,
         log_list.extend([success, panel_output])
         print('panel reading: ' + str(panel_output).ljust(pads[1]), end= ' ')
 
-        socket_state = plug.is_on
+        try:
+            socket_state = plug.is_on
+        except:
+            print('cannot find plug')
+            continue
+
         log_list.append(socket_state)
 
         if panel_output >= threshold:
@@ -71,13 +76,21 @@ def main(panel_ip, socket_ip, threshold,
                 print('leave on')
             
             else:
-                plug.turn_on()
+                try:
+                    plug.turn_on()
+                except:
+                    print('cannot find plug')
+                    continue
                 print('** TURN ON **')
                 log_list.append('activate')
 
         elif panel_output < threshold:
             if socket_state:
-                plug.turn_off()
+                try:
+                    plug.turn_off()
+                except:
+                    print('cannot find plug')
+                    continue
                 print('** TURN OFF **')
                 log_list.append('deactivate')
             
@@ -86,7 +99,13 @@ def main(panel_ip, socket_ip, threshold,
                 print('leave off')
 
         # log a plug reading after any changes
-        log_list.append(plug.is_on)
+        try:
+            socket_state = plug.is_on
+        except:
+            print('cannot find plug')
+            continue
+
+        log_list.append(socket_state)
 
         # write out log 
         with open(log_file, 'a') as f:
