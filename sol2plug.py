@@ -7,6 +7,7 @@ import requests
 from tplink_smartplug import SmartPlug
 
 CSV_COLUMNS = ['datetime', 
+               'iteration',
                'panel_success',
                'panel_output',
                'socket_state',
@@ -31,13 +32,15 @@ class TestPlug:
 
 
 def main(panel_ip, socket_ip=None, threshold=0,
-         interval=300, log_file='log.csv',
-         single_shot=False, test_plug=False):
-    """Run an infinite loop which tests the power output at panel_ip,
+         interval=300, iterations=0, log_file='log.csv',
+         test_plug=False):
+    """Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
 
-    Interrupt with ctrl-c
+    For infinite loop pass iterations=0 and interrupt with ctrl-c
+
+    If pass single_shot=True, will do one test and exit
 
     To test:
         pass socket_ip=None and test_plug = True to simulate the plug
@@ -69,11 +72,17 @@ def main(panel_ip, socket_ip=None, threshold=0,
         print('need either a socket_ip or pass test_plug=True')
         return 1
 
+
+    interval_min = f'{str(interval // 60)} min + {str(interval % 60)} sec'
+
     info = plug.info
     print('- name'.ljust(pads[0]), info['alias'])
     print('- model'.ljust(pads[0]), info['model'])
     print('Initial state:'.ljust(pads[0]), "ON" if plug.is_on else "OFF")
     print('Threshold set:'.ljust(pads[0]), threshold)
+    print('Probe interval:'.ljust(pads[0]), interval_min)
+    print('Number of iterations:'.ljust(pads[0]),
+          iterations if iterations else 'infinity')
     print('')
 
 
@@ -84,12 +93,14 @@ def main(panel_ip, socket_ip=None, threshold=0,
             writer.writerow(CSV_COLUMNS)
 
 
+    iteration = 0
+
     # main loop
     while True:
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
-        log_list = [ts]
-        print(ts, end=' ')
+        log_list = [ts, iterations]
+        print(ts, f'[{iteration}/{iterations}]', end=" ")
 
         # try to read the panel's current output
         success, panel_output = get_panel_output(panel_ip=panel_ip,
@@ -156,8 +167,11 @@ def main(panel_ip, socket_ip=None, threshold=0,
             writer = csv.writer(f, delimiter=",")
             writer.writerow(log_list)
 
-        if single_shot:
-            return 0
+        if iterations:
+            iteration += 1
+
+            if iteration == iterations:
+                return 0
 
         time.sleep(interval)
   
@@ -196,26 +210,20 @@ def get_panel_output(panel_ip=None, target=None):
 if __name__ == "__main__":
 
     if 'test' in sys.argv:
-        if (len(sys.argv) == 3) & (sys.argv[2] == 'single'):
-            main('0.0.0.0:8000/test.xml', None,
-                 threshold=50, single_shot=True, test_plug=True)
-        else:
-            main('0.0.0.0:8000/test.xml', None,
-                 threshold=50, interval=3, test_plug=True)
+        main(panel_ip=sys.argv[1],
+             socket_ip=None,
+             test_plug=True,
+             threshold=float(sys.argv[3]),
+             interval=int(sys.argv[4]),
+             iterations=int(sys.argv[5])) 
 
-    elif len(sys.argv) == 5:
-        if sys.argv[5] == 'single':
-            main(panel_ip=sys.argv[1],
-                 socket_ip=sys.argv[2],
-                 threshold=sys.argv[3],
-                 single_shot=True) 
-        else:
-            main(panel_ip=sys.argv[1],
-                 socket_ip=sys.argv[2],
-                 threshold=sys.argv[3],
-                 interval=sys.argv[4]) 
-
+    elif len(sys.argv) == 6:
+        main(panel_ip=sys.argv[1],
+             socket_ip=sys.argv[2],
+             threshold=float(sys.argv[3]),
+             interval=int(sys.argv[4]),
+             iterations=int(sys.argv[5])) 
 
     else:
-        print('\nPlease provide:\n   panel_ip, socket_ip, threshold, interval OR "single"')
+        print('\nPlease provide:\n   panel_ip, socket_ip, threshold, interval,iterations')
         print('all separated by spaces\n')
