@@ -66,6 +66,7 @@ def main(panel_ip, socket_ip, threshold,
             socket_state = plug.is_on
         except:
             print('cannot find plug')
+            time.sleep(interval)
             continue
 
         log_list.append(socket_state)
@@ -80,6 +81,7 @@ def main(panel_ip, socket_ip, threshold,
                     plug.turn_on()
                 except:
                     print('cannot find plug')
+                    time.sleep(interval)
                     continue
                 print('** TURN ON **')
                 log_list.append('activate')
@@ -90,6 +92,7 @@ def main(panel_ip, socket_ip, threshold,
                     plug.turn_off()
                 except:
                     print('cannot find plug')
+                    time.sleep(interval)
                     continue
                 print('** TURN OFF **')
                 log_list.append('deactivate')
@@ -103,6 +106,7 @@ def main(panel_ip, socket_ip, threshold,
             socket_state = plug.is_on
         except:
             print('cannot find plug')
+            time.sleep(interval)
             continue
 
         log_list.append(socket_state)
