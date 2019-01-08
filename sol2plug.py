@@ -32,7 +32,7 @@ class TestPlug:
 
 def main(panel_ip, socket_ip=None, threshold=0,
          interval=300, log_file='log.csv',
-         test_plug=False):
+         single_shot=False, test_plug=False):
     """Run an infinite loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
@@ -156,6 +156,9 @@ def main(panel_ip, socket_ip=None, threshold=0,
             writer = csv.writer(f, delimiter=",")
             writer.writerow(log_list)
 
+        if single_shot:
+            return 0
+
         time.sleep(interval)
   
 
@@ -189,16 +192,30 @@ def get_panel_output(panel_ip=None, target=None):
 
     return True, float(result) 
 
+
 if __name__ == "__main__":
-    print('called')
-    print(sys.argv)
 
     if 'test' in sys.argv:
-        main('0.0.0.0:8000/test.xml', None,
-             threshold=50, interval=3, test_plug=True)
+        if (len(sys.argv) == 3) & (sys.argv[2] == 'single'):
+            main('0.0.0.0:8000/test.xml', None,
+                 threshold=50, single_shot=True, test_plug=True)
+        else:
+            main('0.0.0.0:8000/test.xml', None,
+                 threshold=50, interval=3, test_plug=True)
 
-    elif len(sys.argv) == 4:
-        main(sys.argv[1], sys.argv[2], sys.argv[3]) 
+    elif len(sys.argv) == 5:
+        if sys.argv[5] == 'single':
+            main(panel_ip=sys.argv[1],
+                 socket_ip=sys.argv[2],
+                 threshold=sys.argv[3],
+                 single_shot=True) 
+        else:
+            main(panel_ip=sys.argv[1],
+                 socket_ip=sys.argv[2],
+                 threshold=sys.argv[3],
+                 interval=sys.argv[4]) 
+
 
     else:
-        print('I am unsure what you are trying to do')
+        print('\nPlease provide:\n   panel_ip, socket_ip, threshold, interval OR "single"')
+        print('all separated by spaces\n')
