@@ -1,9 +1,8 @@
 import time
 import os
+import sys
 import csv
 import requests
-# from requests_html import HTMLSession
-# from bs4 import BeautifulSoup
 
 from tplink_smartplug import SmartPlug
 
@@ -17,25 +16,66 @@ CSV_COLUMNS = ['datetime',
 
 pads = [30, 10]
 
+class TestPlug:
+    def __init__(self):
+        self.is_on = False
+        self.info = { 'alias': 'testing',
+                      'model': 'testing',
+                    }
 
-def main(panel_ip, socket_ip, threshold,
-         interval=300, log_file='log.csv'):
+    def turn_on(self):
+        self.is_on = True
+
+    def turn_off(self):
+        self.is_on = False
+
+
+def main(panel_ip, socket_ip=None, threshold=0,
+         interval=300, log_file='log.csv',
+         test_plug=False):
+    """Run an infinite loop which tests the power output at panel_ip,
+    and manages the state of a plug at socket_ip, according to the threshold
+    power output level.
+
+    Interrupt with ctrl-c
+
+    To test:
+        pass socket_ip=None and test_plug = True to simulate the plug
+        pass a test xml page on localserver as panel_ip, eg:
+            <line1>x</line1>
+            <OutputPower>99</OutputPower>
+            <line3>x</line3>
+        .. and serve the page with:
+            $ python -m http.server
+        .. issued in the project folder
+
+    """
 
     # create a plug instance
-    try:
-        plug = SmartPlug(socket_ip)
-    except:
-        print('Could not find a socket at', socket_ip)
+    if socket_ip is not None:
+        try:
+            plug = SmartPlug(socket_ip)
+            print('Found plug')
+
+        except:
+            print('Could not find a socket at', socket_ip)
+            return 1
+
+    elif test_plug:
+        print('using test plug')
+        plug = TestPlug()
+
+    else:
+        print('need either a socket_ip or pass test_plug=True')
         return 1
 
-    # get and print initialization info
     info = plug.info
-    print('Found plug')
     print('- name'.ljust(pads[0]), info['alias'])
     print('- model'.ljust(pads[0]), info['model'])
     print('Initial state:'.ljust(pads[0]), "ON" if plug.is_on else "OFF")
     print('Threshold set:'.ljust(pads[0]), threshold)
     print('')
+
 
     # initialise the log file if reqd
     if not os.path.exists(log_file):
@@ -128,68 +168,37 @@ def get_panel_output(panel_ip=None, target=None):
     """
 
     url = 'http://' + panel_ip
-    response = requests.get(url)
+
+    try:
+        response = requests.get(url)
+    except:
+        return False, "no get response from " + url
 
     if not response.ok:
         return False, str(response)
 
     xml_text = response.text
 
-
     result = None
 
     if target in xml_text:
         result = xml_text.split(target)[1][1:-2]
     else:
-        print(f"Can't find {target} in xml")
-        return False, f'"{target}" not found in xml'
+        print(f"cannot find {target} in xml")
+        return False, f'cannot find {target} in xml'
 
     return True, float(result) 
 
+if __name__ == "__main__":
+    print('called')
+    print(sys.argv)
 
+    if 'test' in sys.argv:
+        main('0.0.0.0:8000/test.xml', None,
+             threshold=50, interval=3, test_plug=True)
 
-# def get_panel_output(panel_ip=None, target='target'):
-#     """Returns tuple of success flag and value.
-#     If success, value is the power output of the panel.
-#     Otherwise it is the http response.
-#     """
+    elif len(sys.argv) == 4:
+        main(sys.argv[1], sys.argv[2], sys.argv[3]) 
 
-#     # get the panel web page
-#     url = 'http://' + panel_ip
-#     print('trying url:', url)
-#     session = HTMLSession()
-#     r = session.get(url)
-
-#     if not r.ok:
-#         return False, str(r)
-
-#     # render the web page - executing the js
-#     r.html.render()
-
-#     # get the target
-#     out = r.html.find('#' + target)[0]
-#     print('out', out)
-
-#     return True, float(out.text) 
-
-
-# def get_panel_output(panel_ip=None, target='target'):
-#     """Returns tuple of success flag and value.
-#     If success, value is the power output of the panel.
-#     Otherwise it is the http response.
-#     """
-
-#     url = 'http://' + panel_ip
-#     print('trying url:', url)
-#     response = requests.get(url)
-
-#     if not response.ok:
-#         return False, str(response)
-
-#     soup = BeautifulSoup(response.text, 'html.parser')
-
-#     out = soup.find(id=target).text
-
-#     return True, float(out) 
-
-
+    else:
+        print('I am unsure what you are trying to do')
