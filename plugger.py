@@ -7,7 +7,6 @@ import requests
 from tplink_smartplug import SmartPlug
 
 CSV_COLUMNS = ['datetime', 
-               'iteration',
                'panel_success',
                'panel_output',
                'socket_state',
@@ -15,7 +14,7 @@ CSV_COLUMNS = ['datetime',
                'socket_state1',
               ]
 
-pads = [30, 10]
+pads = [35, 10]
 
 class TestPlug:
     def __init__(self):
@@ -32,25 +31,26 @@ class TestPlug:
 
 
 def main(panel_ip, socket_ip=None, threshold=0,
-         interval=300, iterations=0, log_file='log.csv',
-         test_plug=False):
+         interval=300, single_shot=False, max_tries=None,
+         log_file='log.csv', test_plug=False):
     """Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
 
-    For infinite loop pass iterations=0 and interrupt with ctrl-c
+    If pass single_shot=True, will do one test and exit, after making
+    max_tries number of attempts to make a successful read and switch
 
-    If pass single_shot=True, will do one test and exit
+    Otherwise will operate continuously. Interrupt with ctrl-c
 
     To test:
-        pass socket_ip=None and test_plug = True to simulate the plug
+        pass socket_ip=None and test_plug=True to simulate the plug
         pass a test xml page on localserver as panel_ip, eg:
             <line1>x</line1>
             <OutputPower>99</OutputPower>
             <line3>x</line3>
-        .. and serve the page with:
+        .. and serve the page the project folder with:
             $ python -m http.server
-        .. issued in the project folder
+        (can edit and save this file on the fly to simulate panel output)
 
     """
 
@@ -73,16 +73,18 @@ def main(panel_ip, socket_ip=None, threshold=0,
         return 1
 
 
-    interval_min = f'{str(interval // 60)} min + {str(interval % 60)} sec'
+    interval_by_min = f'{str(interval // 60)} min, {str(interval % 60)} sec'
 
     info = plug.info
     print('- name'.ljust(pads[0]), info['alias'])
     print('- model'.ljust(pads[0]), info['model'])
-    print('Initial state:'.ljust(pads[0]), "ON" if plug.is_on else "OFF")
+    print('Initial plug state:'.ljust(pads[0]), "ON" if plug.is_on else "OFF")
     print('Threshold set:'.ljust(pads[0]), threshold)
-    print('Probe interval:'.ljust(pads[0]), interval_min)
-    print('Number of iterations:'.ljust(pads[0]),
-          iterations if iterations else 'infinity')
+    print('Test interval:'.ljust(pads[0]), interval_by_min)
+    print('Testing mode:'.ljust(pads[0]),
+          'single shot' if single_shot else 'indefinite')
+    print('Max attempts (if single shot):'.ljust(pads[0]),
+          max_tries if single_shot else 'n/a')
     print('')
 
 
@@ -93,14 +95,19 @@ def main(panel_ip, socket_ip=None, threshold=0,
             writer.writerow(CSV_COLUMNS)
 
 
-    iteration = 0
+    tries = 0
 
     # main loop
     while True:
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
-        log_list = [ts, iterations]
-        print(ts, f'[{iteration}/{iterations}]', end=" ")
+        log_list = [ts]
+
+        if single_shot:
+            print(ts, f'[{tries + 1}/{max_tries}]'.ljust(7), end=" ")
+        else:
+            print(ts, end=" ")
+
 
         # try to read the panel's current output
         success, panel_output = get_panel_output(panel_ip=panel_ip,
@@ -108,6 +115,11 @@ def main(panel_ip, socket_ip=None, threshold=0,
 
         if not success:
             print(f'failed to get panel output, error: {panel_output}')
+            if single_shot:
+                tries += 1
+                if tries == max_tries:
+                    return 0
+            time.sleep(interval)
             continue
 
         log_list.extend([success, panel_output])
@@ -117,6 +129,10 @@ def main(panel_ip, socket_ip=None, threshold=0,
             socket_state = plug.is_on
         except:
             print('cannot find plug')
+            if single_shot:
+                tries += 1
+                if tries == max_tries:
+                    return 0
             time.sleep(interval)
             continue
 
@@ -132,6 +148,10 @@ def main(panel_ip, socket_ip=None, threshold=0,
                     plug.turn_on()
                 except:
                     print('cannot find plug')
+                    if single_shot:
+                        tries += 1
+                        if tries == max_tries:
+                            return 0
                     time.sleep(interval)
                     continue
                 print('** TURN ON **')
@@ -143,6 +163,10 @@ def main(panel_ip, socket_ip=None, threshold=0,
                     plug.turn_off()
                 except:
                     print('cannot find plug')
+                    if single_shot:
+                        tries += 1
+                        if tries == max_tries:
+                            return 0
                     time.sleep(interval)
                     continue
                 print('** TURN OFF **')
@@ -157,7 +181,7 @@ def main(panel_ip, socket_ip=None, threshold=0,
             socket_state = plug.is_on
         except:
             print('cannot find plug')
-            time.sleep(interval)
+            socket_state = 'not found after changes'
             continue
 
         log_list.append(socket_state)
@@ -167,11 +191,8 @@ def main(panel_ip, socket_ip=None, threshold=0,
             writer = csv.writer(f, delimiter=",")
             writer.writerow(log_list)
 
-        if iterations:
-            iteration += 1
-
-            if iteration == iterations:
-                return 0
+        if single_shot:
+            return 0
 
         time.sleep(interval)
   
@@ -189,7 +210,7 @@ def get_panel_output(panel_ip=None, target=None):
     try:
         response = requests.get(url)
     except:
-        return False, "no get response from " + url
+        return False, "no response from " + url
 
     if not response.ok:
         return False, str(response)
@@ -198,10 +219,9 @@ def get_panel_output(panel_ip=None, target=None):
 
     result = None
 
-    if target in xml_text:
-        result = xml_text.split(target)[1][1:-2]
-    else:
-        print(f"cannot find {target} in xml")
+    try:
+        result = float(xml_text.split(target)[1][1:-2])
+    except:
         return False, f'cannot find {target} in xml'
 
     return True, float(result) 
@@ -215,15 +235,26 @@ if __name__ == "__main__":
              test_plug=True,
              threshold=float(sys.argv[3]),
              interval=int(sys.argv[4]),
-             iterations=int(sys.argv[5])) 
+             max_tries=int(sys.argv[5]),
+             single_shot= bool(int(sys.argv[5])))
 
     elif len(sys.argv) == 6:
         main(panel_ip=sys.argv[1],
              socket_ip=sys.argv[2],
              threshold=float(sys.argv[3]),
              interval=int(sys.argv[4]),
-             iterations=int(sys.argv[5])) 
+             max_tries=int(sys.argv[5]),
+             single_shot= bool(int(sys.argv[5])))
 
     else:
-        print('\nPlease provide:\n   panel_ip, socket_ip, threshold, interval,iterations')
-        print('all separated by spaces\n')
+        pad = 15
+        print('\nPlease provide:\n',
+              'panel_ip'.ljust(pad) + 'eg 192.168.1.161/meters.xml\n',
+              'socket_ip'.ljust(pad) + 'eg 192.168.1.61\n',
+              'threshold'.ljust(pad) + 'eg 0.7\n',
+              'interval'.ljust(pad) + 'eg 300 for 5 mins\n',
+              'max_tries'.ljust(pad) + 'if a single shot.'
+              'Use 0 for ongoing testing\n')
+        print('(all separated by spaces)\n')
+        print('eg:\n python sol2plug.py 192.168.1.161/meters.xml',
+              '192.168.1.61 0.7 15\n\n')
