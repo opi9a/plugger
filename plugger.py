@@ -98,7 +98,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     print('*'*59)
     print('')
     
-    time.sleep(5000)
+    time.sleep(1)
 
 
     # initialise the log file if reqd
@@ -121,6 +121,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         else:
             print(ts, end=" ")
 
+        time.sleep(1)
 
         # try to read the panel's current output
         success, panel_output = get_panel_output(panel_ip=panel_ip,
