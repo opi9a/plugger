@@ -97,6 +97,8 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     print('')
     print('*'*59)
     print('')
+    
+    time.sleep(5000)
 
 
     # initialise the log file if reqd
