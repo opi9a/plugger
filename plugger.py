@@ -17,10 +17,11 @@ CSV_COLUMNS = ['datetime',
 pads = [35, 10]
 
 class TestPlug:
+    # creates a simulated plug object
     def __init__(self):
         self.is_on = False
-        self.info = { 'alias': 'testing',
-                      'model': 'testing',
+        self.info = { 'alias': 'Test Plug',
+                      'model': 'Test Plug',
                     }
 
     def turn_on(self):
@@ -58,14 +59,12 @@ def main(panel_ip, socket_ip=None, threshold=0,
     if socket_ip is not None:
         try:
             plug = SmartPlug(socket_ip)
-            print('Found plug')
 
         except:
-            print('Could not find a socket at', socket_ip)
+            print('Could not find a plug at', socket_ip)
             return 1
 
     elif test_plug:
-        print('using test plug')
         plug = TestPlug()
 
     else:
@@ -75,16 +74,28 @@ def main(panel_ip, socket_ip=None, threshold=0,
 
     interval_by_min = f'{str(interval // 60)} min, {str(interval % 60)} sec'
 
+    splash_width = 60
     info = plug.info
-    print('- name'.ljust(pads[0]), info['alias'])
-    print('- model'.ljust(pads[0]), info['model'])
+    print('')
+    print('*'*12, 'PLUGGER ENERGY MANAGEMENT SYSTEM', '*'*12)
+    print('')
+    print('version'.ljust(pads[0]), '0.1')
+    print('')
+    print('Plug IP address:'.ljust(pads[0]), socket_ip)
+    print('Plug name'.ljust(pads[0]), info['alias'])
+    print('Plug model'.ljust(pads[0]), info['model'])
     print('Initial plug state:'.ljust(pads[0]), "ON" if plug.is_on else "OFF")
-    print('Threshold set:'.ljust(pads[0]), threshold)
+    print('')
+    print('Panel IP address:'.ljust(pads[0]), panel_ip)
+    print('Panel power output threshold:'.ljust(pads[0]), threshold)
+    print('')
     print('Test interval:'.ljust(pads[0]), interval_by_min)
     print('Testing mode:'.ljust(pads[0]),
-          'single shot' if single_shot else 'indefinite')
+          'single shot' if single_shot else 'continuous')
     print('Max attempts (if single shot):'.ljust(pads[0]),
           max_tries if single_shot else 'n/a')
+    print('')
+    print('*'*59)
     print('')
 
 
@@ -252,9 +263,9 @@ if __name__ == "__main__":
               'panel_ip'.ljust(pad) + 'eg 192.168.1.161/meters.xml\n',
               'socket_ip'.ljust(pad) + 'eg 192.168.1.61\n',
               'threshold'.ljust(pad) + 'eg 0.7\n',
-              'interval'.ljust(pad) + 'eg 300 for 5 mins\n',
+              'interval'.ljust(pad) + 'in seconds, so eg 300 for 5 mins\n',
               'max_tries'.ljust(pad) + 'if a single shot.'
-              'Use 0 for ongoing testing\n')
+              ' Use 0 for continuous operation\n')
         print('(all separated by spaces)\n')
-        print('eg:\n python sol2plug.py 192.168.1.161/meters.xml',
+        print('eg:\n python plugger.py 192.168.1.161/meters.xml',
               '192.168.1.61 0.7 15\n\n')
