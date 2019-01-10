@@ -109,12 +109,16 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
 
     tries = 0
+    print('x-2')
+    time.sleep(1)
 
     # main loop
     while True:
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
         log_list = [ts]
+        print('x-2')
+        time.sleep(1)
 
         if single_shot:
             print(ts, f'[{tries + 1}/{max_tries}]'.ljust(7), end=" ")
