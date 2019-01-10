@@ -102,10 +102,10 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
 
     # initialise the log file if reqd
-    if not os.path.exists(log_file):
-        with open(log_file, 'a') as f:
-            writer = csv.writer(f, delimiter=",")
-            writer.writerow(CSV_COLUMNS)
+    # if not os.path.exists(log_file):
+    #     with open(log_file, 'a') as f:
+    #         writer = csv.writer(f, delimiter=",")
+    #         writer.writerow(CSV_COLUMNS)
 
 
     tries = 0
@@ -117,8 +117,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
         log_list = [ts]
-        print('x-2')
-        time.sleep(1)
 
         if single_shot:
             print(ts, f'[{tries + 1}/{max_tries}]'.ljust(7), end=" ")
@@ -210,9 +208,9 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         log_list.append(socket_state)
 
         # write out log 
-        with open(log_file, 'a') as f:
-            writer = csv.writer(f, delimiter=",")
-            writer.writerow(log_list)
+        # with open(log_file, 'a') as f:
+        #     writer = csv.writer(f, delimiter=",")
+        #     writer.writerow(log_list)
 
         if single_shot:
             return 0
