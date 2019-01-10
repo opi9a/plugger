@@ -103,13 +103,12 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
     # initialise the log file if reqd
     if not os.path.exists(log_file):
-        with open(log_file, 'a') as f:
+        with open(log_file, 'a', newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(CSV_COLUMNS)
 
 
     tries = 0
-    time.sleep(1)
 
     # main loop
     while True:
@@ -122,7 +121,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         else:
             print(ts, end=" ")
 
-        time.sleep(1)
 
         # try to read the panel's current output
         success, panel_output = get_panel_output(panel_ip=panel_ip,
@@ -153,7 +151,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
-        time.sleep(1)
         log_list.append(socket_state)
 
         if panel_output >= threshold:
@@ -205,7 +202,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         log_list.append(socket_state)
 
         # write out log 
-        with open(log_file, 'a') as f:
+        with open(log_file, 'a', newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(log_list)
 
