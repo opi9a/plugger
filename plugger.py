@@ -31,8 +31,8 @@ class TestPlug:
         self.is_on = False
 
 
-def main(panel_ip, socket_ip=None, threshold=0,
-         interval=300, single_shot=False, max_tries=None,
+def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
+         threshold=0.7, interval=30, single_shot=False, max_tries=None,
          log_file='log.csv', test_plug=False):
     """Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
@@ -240,6 +240,8 @@ def get_panel_output(panel_ip=None, target=None):
 
 if __name__ == "__main__":
 
+    print('args', sys.argv)
+
     if 'test' in sys.argv:
         main(panel_ip=sys.argv[1],
              socket_ip=None,
@@ -248,6 +250,9 @@ if __name__ == "__main__":
              interval=int(sys.argv[4]),
              max_tries=int(sys.argv[5]),
              single_shot= bool(int(sys.argv[5])))
+
+    elif len(sys.argv) == 1:
+        main()
 
     elif len(sys.argv) == 6:
         main(panel_ip=sys.argv[1],
