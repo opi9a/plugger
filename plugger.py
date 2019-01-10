@@ -33,7 +33,7 @@ class TestPlug:
 
 def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
          threshold=0.7, interval=30, single_shot=False, max_tries=None,
-         log_file='C:\Users\eugen\plugger\log.csv', test_plug=False):
+         log_file='C:\\Users\\eugen\\plugger\\log.csv', test_plug=False):
     """Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
