@@ -7,6 +7,7 @@ import requests
 from tplink_smartplug import SmartPlug
 
 CSV_COLUMNS = ['datetime', 
+               'mode',
                'panel_success',
                'panel_output',
                'socket_state',
@@ -119,7 +120,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         if single_shot:
             print(ts, f'[{tries + 1}/{max_tries}]'.ljust(7), end=" ")
         else:
-            print(ts, end=" ")
+            print(ts, 'single' if single_shot else 'cont', end=" ")
 
 
         # try to read the panel's current output
