@@ -102,14 +102,13 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
 
     # initialise the log file if reqd
-    # if not os.path.exists(log_file):
-    #     with open(log_file, 'a') as f:
-    #         writer = csv.writer(f, delimiter=",")
-    #         writer.writerow(CSV_COLUMNS)
+    if not os.path.exists(log_file):
+        with open(log_file, 'a') as f:
+            writer = csv.writer(f, delimiter=",")
+            writer.writerow(CSV_COLUMNS)
 
 
     tries = 0
-    print('x-2')
     time.sleep(1)
 
     # main loop
@@ -139,7 +138,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
-        print('x0')
         time.sleep(1)
         log_list.extend([success, panel_output])
         print('panel reading: ' + str(panel_output).ljust(pads[1]), end= ' ')
@@ -155,7 +153,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
-        print('x1')
         time.sleep(1)
         log_list.append(socket_state)
 
@@ -208,9 +205,9 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         log_list.append(socket_state)
 
         # write out log 
-        # with open(log_file, 'a') as f:
-        #     writer = csv.writer(f, delimiter=",")
-        #     writer.writerow(log_list)
+        with open(log_file, 'a') as f:
+            writer = csv.writer(f, delimiter=",")
+            writer.writerow(log_list)
 
         if single_shot:
             return 0
@@ -261,6 +258,7 @@ if __name__ == "__main__":
              threshold=float(sys.argv[3]),
              interval=int(sys.argv[4]),
              max_tries=int(sys.argv[5]),
+             log_file='log.csv',
              single_shot= bool(int(sys.argv[5])))
 
     elif len(sys.argv) == 1:
