@@ -240,6 +240,7 @@ def get_panel_output(panel_ip=None, target=None):
 
 if __name__ == "__main__":
 
+    print(sys.argv)
     if not 'help' in sys.argv:
         print('\nType "python plugger.py help" for inputs prompt')
 
@@ -255,6 +256,9 @@ if __name__ == "__main__":
     elif len(sys.argv) == 1:
         main()
 
+    elif (len(sys.argv) == 2) & (sys.argv[1] == 'single'):
+        main(single_shot=True, max_tries=100)
+
     elif len(sys.argv) == 6:
         main(panel_ip=sys.argv[1],
              socket_ip=sys.argv[2],
@@ -267,7 +271,7 @@ if __name__ == "__main__":
         pad = 15
         print('\nFor simple use with default parameters, just type'
               ' "python plugger.py"')
-        print('\nTo use non-default parameters, please provide:\n',
+        print('\nPlease provide:\n',
               'panel_ip'.ljust(pad) + 'eg 192.168.1.161/meters.xml\n',
               'socket_ip'.ljust(pad) + 'eg 192.168.1.61\n',
               'threshold'.ljust(pad) + 'eg 0.7\n',
