@@ -115,12 +115,12 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     while True:
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
-        log_list = [ts]
+        log_list = [ts, 'single' if single_shot else 'cont']
 
         if single_shot:
             print(ts, f'[{tries + 1}/{max_tries}]'.ljust(7), end=" ")
         else:
-            print(ts, 'single' if single_shot else 'cont', end=" ")
+            print(ts, end=" ")
 
 
         # try to read the panel's current output
@@ -137,7 +137,6 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
-        time.sleep(1)
         log_list.extend([success, panel_output])
         print('panel reading: ' + str(panel_output).ljust(pads[1]), end= ' ')
 
