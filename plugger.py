@@ -240,7 +240,7 @@ def get_panel_output(panel_ip=None, target=None):
 
 if __name__ == "__main__":
 
-    print('args', sys.argv)
+    print('type "python plugger.py help" for inputs prompt')
 
     if 'test' in sys.argv:
         main(panel_ip=sys.argv[1],
