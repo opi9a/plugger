@@ -129,6 +129,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
         if not success:
             print(f'failed to get panel output, error: {panel_output}')
+            time.sleep(1)
             if single_shot:
                 tries += 1
                 if tries == max_tries:
@@ -136,6 +137,8 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
+        print('x0')
+        time.sleep(1)
         log_list.extend([success, panel_output])
         print('panel reading: ' + str(panel_output).ljust(pads[1]), end= ' ')
 
@@ -150,6 +153,8 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             time.sleep(interval)
             continue
 
+        print('x1')
+        time.sleep(1)
         log_list.append(socket_state)
 
         if panel_output >= threshold:
