@@ -1,4 +1,6 @@
 import time
+import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 import sys
 import csv
@@ -34,7 +36,10 @@ class TestPlug:
 
 def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
          threshold=0.7, interval=30, single_shot=False, max_tries=None,
-         log_file='C:\\Users\\eugen\\plugger\\log.csv', test_plug=False):
+         log_file='C:\\Users\\eugen\\plugger\\log.csv', test_plug=False, 
+         daily_log_dir='C:\\Users\\eugen\\plugger\\daily_logs\\', 
+         timed_log_when='midnight', timed_log_interval=None,
+         days_to_log=28):
     """Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
@@ -56,20 +61,45 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
     """
 
+    # make a daily logging directory if doesn't exist
+    if not os.path.exists(daily_log_dir):
+         os.mkdir(daily_log_dir)
+
+    # set up logging
+    formatter = logging.Formatter('%(asctime)-15s %(msg)-10s')
+    # formatter.datefmt = ('%d/%m/%y %H:%M:%S')
+    file_path = os.path.join(daily_log_dir, 'log')
+    print('made a folder for logs: {file_path}')
+
+    handler = TimedRotatingFileHandler(file_path, when=timed_log_when,
+                                       interval=timed_log_interval,
+                                       backupCount=days_to_log)
+
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(formatter)
+
+    log = logging.getLogger()
+    log.setLevel(logging.INFO)
+    log.addHandler(handler)
+
     # create a plug instance
     if socket_ip is not None:
         try:
             plug = SmartPlug(socket_ip)
+            log.info('[main 0.00] initial plug found')
 
         except:
             print('Could not find a plug at', socket_ip)
+            log.info('[main 0.10] initial plug NOT FOUND')
             return 1
 
     elif test_plug:
         plug = TestPlug()
+        log.info('[main 0.20] using test plug')
 
     else:
         print('need either a socket_ip or pass test_plug=True')
+        log.info('[main 0.30] exiting as no plug')
         return 1
 
 
@@ -113,6 +143,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
     # main loop
     while True:
+        log.info('[main 0.40] entering main loop')
 
         ts = time.strftime('%d/%m/%y %H:%M:%S')
         log_list = [ts, 'single' if single_shot else 'cont']
@@ -124,15 +155,18 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
 
         # try to read the panel's current output
+        log.info('[main 0.50] ready to read panel')
         success, panel_output = get_panel_output(panel_ip=panel_ip,
-                                                 target='OutputPower')
+                                         target='OutputPower', log=log)
+        log.info(f'[main 0.60] panel read: success={success}')
+        log.info(f'[main 0.60] panel read: output={panel_output}')
 
         if not success:
             print(f'failed to get panel output, error: {panel_output}')
-            time.sleep(1)
             if single_shot:
                 tries += 1
                 if tries == max_tries:
+                    log.info('[main 0.70] reached max tries, exiting')
                     return 0
             time.sleep(interval)
             continue
@@ -142,11 +176,14 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
 
         try:
             socket_state = plug.is_on
+            log.info(f'[main 0.80] read plug state: {socket_state}')
         except:
             print('cannot find plug')
+            log.info(f'[main 0.90] cannot read plug')
             if single_shot:
                 tries += 1
                 if tries == max_tries:
+                    log.info('[main 1.00] reached max tries, exiting')
                     return 0
             time.sleep(interval)
             continue
@@ -156,16 +193,20 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         if panel_output >= threshold:
             if socket_state:
                 log_list.append('leave on')
+                log.info(f'[main 1.10] output over threshold, leaving on')
                 print('leave on')
             
             else:
                 try:
                     plug.turn_on()
+                    log.info(f'[main 1.20] *** turned plug ON ***')
                 except:
-                    print('cannot find plug')
+                    print('cannot turn on plug')
+                    log.info(f'[main 1.30] cannot turn on plug')
                     if single_shot:
                         tries += 1
                         if tries == max_tries:
+                            log.info('[main 1.40] reached max tries, exiting')
                             return 0
                     time.sleep(interval)
                     continue
@@ -176,11 +217,14 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             if socket_state:
                 try:
                     plug.turn_off()
+                    log.info(f'[main 1.50] *** turned plug OFF ***')
                 except:
                     print('cannot find plug')
+                    log.info(f'[main 1.60] cannot turn off plug')
                     if single_shot:
                         tries += 1
                         if tries == max_tries:
+                            log.info('[main 1.70] reached max tries, exiting')
                             return 0
                     time.sleep(interval)
                     continue
@@ -194,8 +238,10 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         # log a plug reading after any changes
         try:
             socket_state = plug.is_on
+            log.info(f'[main 1.80] got plug reading after changes: {socket_state}')
         except:
             print('cannot find plug')
+            log.info(f'[main 1.90] cannot read plug after changes')
             socket_state = 'not found after changes'
             continue
 
@@ -209,10 +255,11 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
         if single_shot:
             return 0
 
+        log.info(f'[main 2.00] reached end of main loop')
         time.sleep(interval)
   
 
-def get_panel_output(panel_ip=None, target=None):
+def get_panel_output(panel_ip=None, target=None, log=None):
     """Returns tuple of success flag and value.
     If success, value is the power output of the panel.
     Otherwise it is the http response.
@@ -220,11 +267,15 @@ def get_panel_output(panel_ip=None, target=None):
     xml_text parameter is for testing (without getting url)
     """
 
+    log.info('[getp 0.00] calling get_panel_output')
     url = 'http://' + panel_ip
+    log.info(f'[getp 0.10] making url {url}')
 
     try:
         response = requests.get(url)
+        log.info(f'[getp 0.20] got response {response}')
     except:
+        log.info(f'[getp 0.30] no response')
         return False, "no response from " + url
 
     if not response.ok:
@@ -239,6 +290,7 @@ def get_panel_output(panel_ip=None, target=None):
     except:
         return False, f'cannot find {target} in xml'
 
+    log.info('[getp 0.40] leaving get_panel_output')
     return True, float(result) 
 
 
