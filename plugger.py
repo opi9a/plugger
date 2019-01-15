@@ -88,10 +88,13 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     log.addHandler(handler)
 
     # initial entry
+    log.info('')
+    log.info('*' * 50)
+    log.info('')
     if single_shot:
-        log.info('[main 0.00] Calling main, mode=single')
+        log.info('[main 0.01] Calling main, mode=single')
     else:
-        log.info('[main 0.01] Calling main, mode=cont')
+        log.info('[main 0.02] Calling main, mode=cont')
 
     # create a plug instance
     if socket_ip is not None:
