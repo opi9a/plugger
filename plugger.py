@@ -71,9 +71,14 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     file_path = os.path.join(daily_log_dir, 'log')
     print('made a folder for logs: {file_path}')
 
-    handler = TimedRotatingFileHandler(file_path, when=timed_log_when,
-                                       interval=timed_log_interval,
-                                       backupCount=days_to_log)
+    if timed_log_interval is None:
+        handler = TimedRotatingFileHandler(file_path, when=timed_log_when,
+                                           backupCount=days_to_log)
+
+    else:
+        handler = TimedRotatingFileHandler(file_path, when=timed_log_when,
+                                           interval=timed_log_interval,
+                                           backupCount=days_to_log)
 
     handler.setLevel(logging.INFO)
     handler.setFormatter(formatter)
