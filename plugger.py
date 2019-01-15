@@ -87,11 +87,17 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
     log.setLevel(logging.INFO)
     log.addHandler(handler)
 
+    # initial entry
+    if single_shot:
+        log.info('[main 0.00] Calling main, mode=single')
+    else:
+        log.info('[main 0.01] Calling main, mode=cont')
+
     # create a plug instance
     if socket_ip is not None:
         try:
             plug = SmartPlug(socket_ip)
-            log.info('[main 0.00] initial plug found')
+            log.info('[main 0.05] initial plug found')
 
         except:
             print('Could not find a plug at', socket_ip)
