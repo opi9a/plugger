@@ -40,7 +40,8 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
          daily_log_dir='C:\\Users\\eugen\\plugger\\daily_logs\\', 
          timed_log_when='midnight', timed_log_interval=None,
          days_to_log=28):
-    """Do iterations over a loop which tests the power output at panel_ip,
+    """
+    Do iterations over a loop which tests the power output at panel_ip,
     and manages the state of a plug at socket_ip, according to the threshold
     power output level.
 
@@ -266,6 +267,7 @@ def main(panel_ip='192.168.1.161/meters.xml', socket_ip='192.168.1.61',
             writer = csv.writer(f, delimiter=",")
             writer.writerow(log_list)
 
+        # exit loop if only a single shot required
         if single_shot:
             return 0
 
